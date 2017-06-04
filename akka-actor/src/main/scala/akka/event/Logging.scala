@@ -10,9 +10,9 @@ import akka.actor.ActorSystem.Settings
 import akka.actor._
 import akka.dispatch.RequiresMessageQueue
 import akka.event.Logging._
-import akka.util.ReentrantGuard
-import akka.util.Helpers
+import akka.util.{ TimestampGenerator, TimestampGeneratorLoader, ReentrantGuard, Helpers }
 import akka.{ AkkaException, ConfigurationException }
+import com.typesafe.config.{ ConfigFactory, Config }
 
 import scala.annotation.implicitNotFound
 import scala.collection.immutable
@@ -378,6 +378,11 @@ object LogSource {
  */
 object Logging {
 
+  val akkaConfig: Config = ConfigFactory.load.getConfig("akka")
+
+  val timestampGeneratorImplementationClass: String = akkaConfig.getString("log-timestamp-generator")
+  val timestampGenerator: TimestampGenerator = TimestampGeneratorLoader.load(timestampGeneratorImplementationClass)
+
   /**
    * Returns a 'safe' getSimpleName for the provided object's Class
    * @return the simple name of the given object's Class
@@ -678,7 +683,7 @@ object Logging {
     /**
      * When this LogEvent was created according to System.currentTimeMillis
      */
-    val timestamp: Long = System.currentTimeMillis
+    val timestamp: Long = timestampGenerator.timestamp
 
     /**
      * The LogLevel of this LogEvent
